@@ -1,3 +1,4 @@
 dist*
 build*
 updatefromgit.egg-info*
+setup.py
