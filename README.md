@@ -1,4 +1,4 @@
-# Update From Git 
+# Update From Git
 
 This package is built on top of this [repository](https://github.com/PowerBiDevCamp/FabConWorkshopSweden).I have enhanced it to be more suitable for Azure Pipelines.
 
@@ -60,7 +60,7 @@ access_token = acquire_token_user_id_password_confidential(
     TENANT_ID, CLIENT_ID, USERNAME, PASSWORD, CLIENT_SECRET
 )
 update_workspace_from_git(WORKSPACE_ID, access_token)
-time.sleep(600)
+time.sleep(600) #adjust it per your need
 workspace_head = get_git_status(WORKSPACE_ID, access_token)
 commit_all_items_to_git(WORKSPACE_ID, workspace_head, access_token)
 logger.command("Program Completed")
