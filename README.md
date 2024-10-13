@@ -1,3 +1,6 @@
+
+[![UpdateFromGit PyPI and TestPyPI](https://github.com/muhssamy/updatefromgit/actions/workflows/github-release.yml/badge.svg)](https://github.com/muhssamy/updatefromgit/actions/workflows/github-release.yml)
+
 # Update From Git
 
 This package is built on top of this [repository](https://github.com/PowerBiDevCamp/FabConWorkshopSweden).I have enhanced it to be more suitable for Azure Pipelines.
