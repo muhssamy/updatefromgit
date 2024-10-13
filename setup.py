@@ -9,7 +9,7 @@ from setuptools import find_packages, setup
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 
-VERSION = "0.0.5"
+VERSION = "1.0.0"
 DESCRIPTION = (
     "Update Fabric Workspace From Git Repo using A user with Email And Password"
 )
