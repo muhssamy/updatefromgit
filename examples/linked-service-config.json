@@ -1,0 +1,19 @@
+{
+    "wh1": {
+        "typeProperties": {
+            "artifactId": "",
+            "endpoint": "",
+            "workspaceId": ""
+        },
+        "objectId": "",
+        "name": "wh1"
+    },
+    "lh_dataanalytics_raw": {
+        "typeProperties": {
+            "artifactId": "",
+            "workspaceId": "",
+            "rootFolder": "Tables"
+        },
+        "name": "lh1"
+    }
+}

@@ -9,3 +9,4 @@ from .gitfunctions import (
     get_git_status,
     update_workspace_from_git,
 )
+from .update_linked_services import update_linked_services
