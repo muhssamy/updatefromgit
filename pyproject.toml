@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "updatefromgit"
-version = "2.0.0"
+version = "2.0.1"
 dependencies = ["msal", "azlog"]
 requires-python = ">=3.6"
 authors = [{ name = "Muhammad Samy", email = "muhssamy@gmail.com" }]
@@ -17,6 +17,7 @@ classifiers = [
     "Programming Language :: Python",
     "Operating System :: OS Independent",
 ]
+license = { file = "LICENSE" }
 
 [project.urls]
 Repository = "https://github.com/muhssamy/updatefromgit"

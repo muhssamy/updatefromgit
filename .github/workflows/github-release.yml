@@ -1,8 +1,10 @@
 name: Publish 📦 to PyPI and TestPyPI
 
-
-on: push
-
+on:
+  push:
+    tags:
+      - "v*"
+      
 jobs:
   build:
     name: Build distribution 📦
