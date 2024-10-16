@@ -8,7 +8,7 @@
         "objectId": "",
         "name": "wh1"
     },
-    "lh_dataanalytics_raw": {
+    "lh1": {
         "typeProperties": {
             "artifactId": "",
             "workspaceId": "",
