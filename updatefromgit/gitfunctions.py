@@ -291,16 +291,9 @@ def commit_all_items_to_git(workspace_id: str, workspace_head: str, token):
         os._exit(1)
 
 
-def generate_config_file(workspace_id: str, token: str) -> None:
+def generate_lakehouse_config(workspace_id: str, token: str) -> dict:
     """
-    Fetch workspace items, filter by 'Warehouse' and 'Lakehouse', retrieve warehouse details,
-    and create a JSON file with formatted information for each relevant item.
-
-    This function interacts with the Microsoft Fabric API to:
-    1. Fetch all items from a given workspace.
-    2. Filter for 'Warehouse' and 'Lakehouse' types.
-    3. Retrieve detailed information for each warehouse.
-    4. Structure the data and save it into a JSON file.
+    Fetch only 'Lakehouse' items from the workspace and return a structured dictionary with relevant data.
 
     Parameters
     ----------
@@ -311,52 +304,64 @@ def generate_config_file(workspace_id: str, token: str) -> None:
 
     Returns
     -------
-    None
-        This function saves the formatted data to a JSON file named
-        `workspace_<workspace_id>_data.json`.
+    dict
+        A dictionary containing Lakehouse items.
     """
 
     def fetch_workspace_items() -> list:
-        """
-        Fetch items from the Microsoft Fabric workspace.
-
-        This function sends a GET request to the Microsoft Fabric API to retrieve all
-        items within the specified workspace and filters the results to only include
-        'Warehouse' and 'Lakehouse' types.
-
-        Returns
-        -------
-        list
-            A list of dictionaries containing information about the filtered workspace items.
-        """
         url = f"{FABRIC_API_URL}/workspaces/{workspace_id}/items"
         headers = {"Authorization": f"Bearer {token}"}
         response = requests.get(url, headers=headers, timeout=120)
         response.raise_for_status()
 
         items = response.json().get("value", [])
-        filtered_items = [
-            item for item in items if item["type"] in ["Warehouse", "Lakehouse"]
-        ]
-        return filtered_items
+        return [item for item in items if item["type"] == "Lakehouse"]
+
+    # Prepare data structure
+    lakehouse_data = {}
+    filtered_items = fetch_workspace_items()
+
+    for item in filtered_items:
+        lh_key = f"{item['displayName']}"
+        lakehouse_data[lh_key] = {
+            "typeProperties": {
+                "artifactId": item["id"],
+                "workspaceId": workspace_id,
+                "rootFolder": "Tables",
+            },
+            "name": item["displayName"],
+        }
+
+    return lakehouse_data
+
+
+def generate_warehouse_config(workspace_id: str, token: str) -> dict:
+    """
+    Fetch 'Warehouse' items from the workspace, retrieve their details, and return a structured dictionary.
+
+    Parameters
+    ----------
+    workspace_id : str
+        The ID of the workspace for which the items need to be fetched.
+    token : str
+        The authentication token to access the Microsoft Fabric API.
+
+    Returns
+    -------
+    dict
+        A dictionary containing Warehouse items.
+    """
+
+    def fetch_workspace_items() -> list:
+        url = f"{FABRIC_API_URL}/workspaces/{workspace_id}/items"
+        headers = {"Authorization": f"Bearer {token}"}
+        response = requests.get(url, headers=headers, timeout=120)
+        response.raise_for_status()
+
+        items = response.json().get("value", [])
+        return [item for item in items if item["type"] == "Warehouse"]
 
     def fetch_warehouse_details(warehouse_id: str) -> dict:
-        """
-        Fetch detailed information about a specific warehouse.
-
-        This function sends a GET request to the Microsoft Fabric API to retrieve detailed
-        information about a warehouse, including its connection string and metadata.
-
-        Parameters
-        ----------
-        warehouse_id : str
-            The ID of the warehouse for which details are required.
-
-        Returns
-        -------
-        dict
-            A dictionary containing detailed information about the warehouse.
-        """
         url = f"{FABRIC_API_URL}/workspaces/{workspace_id}/warehouses/{warehouse_id}"
         headers = {"Authorization": f"Bearer {token}"}
         response = requests.get(url, headers=headers, timeout=120)
@@ -364,58 +369,65 @@ def generate_config_file(workspace_id: str, token: str) -> None:
 
         return response.json()
 
-    def create_json(filtered_items: list) -> None:
-        """
-        Create a JSON file from the filtered items (warehouses and lakehouses).
-
-        This function generates a structured JSON object from the filtered items,
-        retrieves warehouse details, and then saves the data to a file.
-
-        Parameters
-        ----------
-        filtered_items : list
-            A list of filtered workspace items containing warehouse and lakehouse details.
-
-        Returns
-        -------
-        None
-            The function saves the data to a JSON file named `workspace_<workspace_id>_data.json`.
-        """
-        result = {}
-
-        for item in filtered_items:
-            if item["type"] == "Warehouse":
-                warehouse = fetch_warehouse_details(item["id"])
-                wh_key = f"{item['displayName']}"
-                result[wh_key] = {
-                    "typeProperties": {
-                        "artifactId": warehouse["id"],
-                        "endpoint": warehouse["properties"]["connectionString"],
-                        "workspaceId": workspace_id,
-                    },
-                    "objectId": warehouse["id"],
-                    "name": warehouse["displayName"],
-                }
-            elif item["type"] == "Lakehouse":
-                lh_key = f"{item['displayName']}"
-                result[lh_key] = {
-                    "typeProperties": {
-                        "artifactId": item["id"],
-                        "workspaceId": workspace_id,
-                        "rootFolder": "Tables",
-                    },
-                    "name": item["displayName"],
-                }
-        # Delete the file if it exists
-        filename = "linkedservice-config.json"
-        if os.path.exists(filename):
-            os.remove(filename)
-
-        with open("linkedservice-config.json", "w") as outfile:
-            json.dump(result, outfile, indent=4)
-
-        print("linkedservice-config file created: linkedservice-config.json")
-
-    # Run the workflow
+    # Prepare data structure
+    warehouse_data = {}
     filtered_items = fetch_workspace_items()
-    create_json(filtered_items)
+
+    for item in filtered_items:
+        warehouse = fetch_warehouse_details(item["id"])
+        wh_key = f"{item['displayName']}"
+        warehouse_data[wh_key] = {
+            "typeProperties": {
+                "artifactId": warehouse["id"],
+                "endpoint": warehouse["properties"]["connectionString"],
+                "workspaceId": workspace_id,
+            },
+            "objectId": warehouse["id"],
+            "name": warehouse["displayName"],
+        }
+
+    return warehouse_data
+
+
+def generate_config_file(
+    lakehouse_workspace_id: str, warehouse_workspace_id: str, token: str
+) -> None:
+    """
+    Run `generate_lakehouse_config` for the Lakehouse workspace and `generate_warehouse_config`
+    for the Warehouse workspace, then merge the results into a single JSON object without
+    any outer keys, such as 'warehouse' or 'lakehouse'.
+
+    Parameters
+    ----------
+    lakehouse_workspace_id : str
+        The workspace ID containing only 'Lakehouse' items.
+    warehouse_workspace_id : str
+        The workspace ID containing only 'Warehouse' items.
+    token : str
+        The authentication token.
+
+    Returns
+    -------
+    None
+        Saves the merged result to `linkedservice-config.json`.
+    """
+
+    # Run the function for Lakehouse items
+    lakehouse_data = generate_lakehouse_config(lakehouse_workspace_id, token)
+
+    # Run the function for Warehouse items
+    warehouse_data = generate_warehouse_config(warehouse_workspace_id, token)
+
+    # Merge the two dictionaries into one (no outer keys like 'warehouse' or 'lakehouse')
+    merged_result = {**warehouse_data, **lakehouse_data}
+
+    # Delete the file if it exists
+    filename = "linkedservice-config.json"
+    if os.path.exists(filename):
+        os.remove(filename)
+
+    # Save the merged result to the JSON file
+    with open(filename, "w") as outfile:
+        json.dump(merged_result, outfile, indent=4)
+
+    logger.command(f"Linked service config file created: {filename}")
